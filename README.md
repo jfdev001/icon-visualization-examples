@@ -8,4 +8,10 @@ simulation as an exemplary case.
 /work/bm1233/m300685/UAICON/R2B7_free_30_years
 ```
 
-TODO: reference to publication here.
+To demonstrate the pipeline, you can call/inspect the script
+
+```
+python scripts/basic_zonal_wind_contour.py
+```
+
+The associated contour plot is in the `data/` directory.

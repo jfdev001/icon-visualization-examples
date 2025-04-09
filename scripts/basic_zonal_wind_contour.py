@@ -1,7 +1,10 @@
-"""CDO to average zonal wind `u` by month and then plot as contours.
+"""CDO to average zonal wind `u` by month, remap, and then contour plot it.
 
-TODO: Might need to pay attention to module load of cdo/netcdf for whether it
-supports the necessary version for processing ICON data.
+# Usage 
+
+```shell
+python scripts/basic_zonal_wind_contour.py
+```
 
 It is also useful to inspect netcdf files on the command line to get a quick
 overview of the variables, their dimensions, units, etc.

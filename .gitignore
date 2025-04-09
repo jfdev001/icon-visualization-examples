@@ -20,6 +20,7 @@ docs/*.pdf
 
 # Other
 tmp/
+data/
 scratch/
 logs/
 

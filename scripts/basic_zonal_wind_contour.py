@@ -47,7 +47,7 @@ grid_file_with_grid_definition = grid_file + grid_definition
 levels_file = os.path.join(
     UAICON_dir, "R2B7_free_30_years/R2B7_free_30_years_const_ML.nc")
 
-output_dir = "tmp"
+output_dir = "data"
 
 assert os.path.exists(UAICON_dir)
 assert os.path.exists(r2b7_netcdf_path)
@@ -95,7 +95,8 @@ if not os.path.exists(r2b7_monmean_remapped_output_path):
 # since the topographical variables (e.g., height, z_mc, topography_c, etc)
 # are constant throughout the simulation
 levels_file_remapped_output_path = os.path.join(
-    output_dir, f"levels_file_{output_grid_type}_remapped.nc")
+    output_dir,
+    Path(os.path.basename(levels_file)).stem + f"_{output_grid_type}_remapped.nc")
 
 if not os.path.exists(levels_file_remapped_output_path):
     print(
@@ -106,4 +107,3 @@ if not os.path.exists(levels_file_remapped_output_path):
         output=levels_file_remapped_output_path)
 
 # do some simple plotting here
-

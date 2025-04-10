@@ -8,9 +8,17 @@ simulation as an exemplary case.
 /work/bm1233/m300685/UAICON/R2B7_free_30_years
 ```
 
-To demonstrate the pipeline, you can call/inspect the script
+To demonstrate the pipeline, install the requirements in a virtual environment
 
+```shell
+python -m venv .venv
+source .venv/bin/activate  
+pip install -r requirements.txt 
 ```
+
+Then, you can call/inspect the script
+
+```shell
 python scripts/basic_zonal_wind_contour.py
 ```
 

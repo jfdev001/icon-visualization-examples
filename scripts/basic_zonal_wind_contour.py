@@ -187,9 +187,9 @@ mean_on_longitude_for_zonal_wind_in_month_arr = np.mean(
     zonal_wind_arr[0], axis=-1)
 
 # resulting dim: (height,)
-ms_per_km = 1000
+meter_per_kilometer = 1000
 mean_on_lat_lon_for_full_level_center_height_in_km_arr = np.mean(
-    full_level_center_height_arr, axis=(1, 2)) / ms_per_km
+    full_level_center_height_arr, axis=(1, 2)) / meter_per_kilometer
 
 contourf = ax.contourf(
     lat_arr,  # (lat,)

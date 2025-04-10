@@ -1,6 +1,4 @@
 ipython
-xarray
-dask
 cdo
 netCDF4
 matplotlib

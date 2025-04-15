@@ -35,6 +35,8 @@ LATITUDE: str = "lat"
 FULL_LEVEL_CENTER_HEIGHT: str = "z_mc"
 
 # Define paths
+dir_of_current_script = os.path.dirname(__file__)
+
 UAICON_dir = "/work/bm1233/m300685/UAICON"
 R2B7_free_30_years_dir = os.path.join(UAICON_dir, "R2B7_free_30_years")
 
@@ -53,7 +55,9 @@ grid_file_with_grid_definition = grid_file + grid_definition
 levels_file = os.path.join(
     UAICON_dir, "R2B7_free_30_years/R2B7_free_30_years_const_ML.nc")
 
-output_dir = "data"
+output_dir = os.path.join(dir_of_current_script, "data")
+if not os.path.exists(output_dir):
+    os.mkdir(output_dir)
 
 assert os.path.exists(UAICON_dir)
 assert os.path.exists(r2b7_netcdf_path)
@@ -76,7 +80,7 @@ r2b7_zonal_wind_monmean_output_path = os.path.join(
 # compute operations like this can take some time
 if not os.path.exists(r2b7_zonal_wind_monmean_output_path):
     print(
-        "Computing monmean: ${r2b7_netcdf_path} to {r2b7_zonal_wind_monmean_output_path}")
+        f"Computing monmean: {r2b7_netcdf_path} to {r2b7_zonal_wind_monmean_output_path}")
     cdo.monmean(  # writes ~1 GB data, may take 1-5 minutes
         input=f"-selvar,{ZONAL_WIND} {r2b7_netcdf_path}",
         output=r2b7_zonal_wind_monmean_output_path)

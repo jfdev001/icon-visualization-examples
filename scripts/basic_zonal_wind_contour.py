@@ -35,9 +35,10 @@ LATITUDE: str = "lat"
 FULL_LEVEL_CENTER_HEIGHT: str = "z_mc"
 
 # Define paths
-dir_of_current_script = os.path.dirname(__file__)
+dir_of_current_script = Path(os.path.dirname(__file__))
+project_dir = dir_of_current_script.parent
 
-UAICON_dir = "/work/bm1233/m300685/UAICON"
+UAICON_dir = "/work/bm1233/m300685/UAICON"  # on Levante HPC
 R2B7_free_30_years_dir = os.path.join(UAICON_dir, "R2B7_free_30_years")
 
 r2b7_netcdf_path = os.path.join(
@@ -55,7 +56,7 @@ grid_file_with_grid_definition = grid_file + grid_definition
 levels_file = os.path.join(
     UAICON_dir, "R2B7_free_30_years/R2B7_free_30_years_const_ML.nc")
 
-output_dir = os.path.join(dir_of_current_script, "data")
+output_dir = os.path.join(dir_of_current_script, "plots")
 if not os.path.exists(output_dir):
     os.mkdir(output_dir)
 

@@ -8,6 +8,8 @@
 **/Datasets
 **/scriptdir
 **/heightfile 
+**/data/
+**/plots/
 
 # gitlab builds
 builds/
@@ -25,7 +27,7 @@ scratch/
 logs/
 
 # env files
-.envrc 
+#.envrc 
 
 #
 # Python stuff

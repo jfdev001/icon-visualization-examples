@@ -30,15 +30,15 @@ METERS_PER_KILOMETER: int = 1000
 # Define paths
 dir_of_current_script = Path(os.path.dirname(__file__))
 project_dir = dir_of_current_script.parent
-data_dir = "/work/bm1233/b383137/URAP-SABER-UAL120_150_F03C14L00S30-R2B7_free_30_years/data/R2B7_free_30_years/"
+data_dir_on_levante = "/work/bm1233/b383137/URAP-SABER-UAL120_150_F03C14L00S30-R2B7_free_30_years/data/R2B7_free_30_years/"
 
 r2b7_netcdf_file = os.path.join(
-    data_dir, "R2B7_free_30_years_u-atm_3d_ML_ymonmean_2019-2029_RM.nc")
+    data_dir_on_levante, "R2B7_free_30_years_u-atm_3d_ML_ymonmean_2019-2029_RM.nc")
 
 r2b7_netcdf_basename_without_file_extension = Path(
     os.path.basename(r2b7_netcdf_file)).stem
 
-levels_file = os.path.join(data_dir, "hfile.nc")
+levels_file = os.path.join(data_dir_on_levante, "hfile.nc")
 
 output_dir = os.path.join(project_dir, "plots")
 if not os.path.exists(output_dir):

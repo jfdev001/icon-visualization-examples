@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """CDO to average zonal wind `u` by month, remap, and then contour plot it.
 
 # Usage 

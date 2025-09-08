@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Contour plot zonal wind for each month where data averaged from 2019-2029.
 
 Example:
@@ -29,7 +30,7 @@ METERS_PER_KILOMETER: int = 1000
 # Define paths
 dir_of_current_script = Path(os.path.dirname(__file__))
 project_dir = dir_of_current_script.parent
-data_dir = "data/"
+data_dir = "/work/bm1233/b383137/URAP-SABER-UAL120_150_F03C14L00S30-R2B7_free_30_years/data/R2B7_free_30_years/"
 
 r2b7_netcdf_file = os.path.join(
     data_dir, "R2B7_free_30_years_u-atm_3d_ML_ymonmean_2019-2029_RM.nc")

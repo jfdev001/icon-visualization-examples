@@ -137,28 +137,32 @@ def main():
     assert r2b7_zonal_wind.shape[TIME_AXIS] == N_MONTHS
 
     print("TRANSFORM DATA...")
-    urap_zonal_wind_jan = transform_zonal_wind(urap_zonal_wind, JANUARY_IX)
-    urap_zonal_wind_jul = transform_zonal_wind(urap_zonal_wind, JULY_IX)
     urap_height_in_km = convert_pressure_in_hPa_to_height_in_km(urap_level)
-
-    r2b4_zonal_wind_jan = transform_zonal_wind(r2b4_zonal_wind, JANUARY_IX)
-    r2b4_zonal_wind_jul = transform_zonal_wind(r2b4_zonal_wind, JULY_IX)
     r2b4_height_in_km = transform_rnbk_height(r2b4_height_in_meters)
-
-    r2b7_zonal_wind_jan = transform_zonal_wind(r2b7_zonal_wind, JANUARY_IX)
-    r2b7_zonal_wind_jul = transform_zonal_wind(r2b7_zonal_wind, JULY_IX)
     r2b7_height_in_km = transform_rnbk_height(r2b7_height_in_meters)
 
-    print("ALIGN DATA...")
     # TODO: since you need to compute differences where latitudes and heights
     # overlap, you need to do something like xarray align
     # https://tutorial.xarray.dev/fundamentals/02.3_aligning_data_objects.html#alignment-putting-data-on-the-same-grid
-    urap = make_xarray_dataset(
-        urap_zonal_wind, urap_height_in_km, urap_lat, urap_lon)
-    r2b4 = make_xarray_dataset(
-        r2b4_zonal_wind, r2b4_height_in_km, r2b4_lat, r2b4_lon)
-    r2b7 = make_xarray_dataset(
-        r2b7_zonal_wind, r2b7_height_in_km, r2b7_lat, r2b7_lon)
+    # TODO: perform interpolation to get the higher resolution grids to the
+    # URAP
+    urap = (
+        make_xarray_dataset(
+            urap_zonal_wind, urap_height_in_km, urap_lat, urap_lon)
+        .mean(dim=LONGITUDE)
+    )
+    r2b4 = (
+        make_xarray_dataset(
+            r2b4_zonal_wind, r2b4_height_in_km, r2b4_lat, r2b4_lon)
+        .mean(dim=LONGITUDE)
+        .interp({HEIGHT: urap.height, LATITUDE: urap.lat})
+    )
+    r2b7 = (
+        make_xarray_dataset(
+            r2b7_zonal_wind, r2b7_height_in_km, r2b7_lat, r2b7_lon)
+        .mean(dim=LONGITUDE)
+        .interp({HEIGHT: urap.height, LATITUDE: urap.lat})
+    )
 
     print("PLOT DATA...")
     # fig: Figure, ax: Axes = plt.subplots()

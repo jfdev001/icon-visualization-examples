@@ -6,25 +6,26 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
-from netCDF4 import Dataset
+import netCDF4 as nc
 
 DESCRIPTION: str = """
 Plot contour differences for zonal winds to illustrate how increasing grid
-resolution (i.e., R2B4 to R2B7) more accurately reflects ground truth 
+resolution (i.e., R2B4 to R2B7) more accurately reflects ground truth
 winds (i.e., URAP data).
 """
 
 LATITUDE: str = "lat"
 LONGITUDE: str = "lon"
 
+N_RNBK_HEIGHT_AXES: int = 3
 RNBK_ZONAL_WIND: str = "u"
-RNBK_HEIGHT: str = "height"
 RNBK_FULL_LEVEL_CENTER_HEIGHT: str = "z_mc"
 
 URAP_ZONAL_WIND: str = "ua"
+N_URAP_LEVEL_AXES: int = 1
 URAP_LEVEL: str = "lev"
 
-N_AXES: int = 4
+N_ZONAL_WIND_AXES: int = 4
 TIME_AXIS: int = 0
 HEIGHT_OR_LEVEL_AXIS: int = 1
 LATITUDE_AXIS: int = 2
@@ -59,6 +60,8 @@ def main():
     r2b7_levels_file = join(r2b7_dir, "hfile.nc")
     assert exists(r2b7_levels_file)
 
+    urap_zonal_wind_file = join(urap_dir, "urap_ymonmean.nc")
+    assert exists(urap_zonal_wind_file)
     r2b4_zonal_wind_file = join(
         r2b4_dir,
         "daily_mean",
@@ -67,15 +70,42 @@ def main():
     r2b7_zonal_wind_file = join(
         r2b7_dir, "R2B7_free_30_years_u-atm_3d_ML_ymonmean_2019-2029_RM.nc")
     assert exists(r2b7_zonal_wind_file)
-    urap_zonal_wind_file = join(urap_dir, "urap_ymonmean.nc")
-    assert exists(urap_zonal_wind_file)
 
-    print("load data...")
+    print("LOAD DATA...")
+    urap_dataset = nc.Dataset(urap_zonal_wind_file)
+    urap_variables = urap_dataset.variables
+    assert len(urap_variables[URAP_LEVEL].shape) == N_URAP_LEVEL_AXES
+    assert (
+        len(urap_variables[URAP_ZONAL_WIND].shape) == N_ZONAL_WIND_AXES)
+
+    r2b4_levels_dataset = nc.Dataset(r2b4_levels_file)
+    r2b4_levels_variables = r2b4_levels_dataset.variables
+    assert (
+        len(r2b4_levels_variables[RNBK_FULL_LEVEL_CENTER_HEIGHT].shape)
+        == N_RNBK_HEIGHT_AXES)
+
+    r2b4_zonal_wind_dataset = nc.Dataset(r2b4_zonal_wind_file)
+    r2b4_zonal_wind_variables = r2b4_zonal_wind_dataset.variables
+    assert (
+        len(r2b4_zonal_wind_variables[RNBK_ZONAL_WIND].shape)
+        == N_ZONAL_WIND_AXES)
+
+    r2b7_levels_dataset = nc.Dataset(r2b7_levels_file)
+    r2b7_levels_variables = r2b7_levels_dataset.variables
+    assert (
+        len(r2b7_levels_variables[RNBK_FULL_LEVEL_CENTER_HEIGHT].shape)
+        == N_RNBK_HEIGHT_AXES)
+
+    r2b7_zonal_wind_dataset = nc.Dataset(r2b7_zonal_wind_file)
+    r2b7_zonal_wind_variables = r2b7_zonal_wind_dataset.variables
+    assert (
+        len(r2b7_zonal_wind_variables[RNBK_ZONAL_WIND].shape)
+        == N_ZONAL_WIND_AXES)
 
     # TODO: pressure level to height for URAP
-    print("transform data...")
+    print("TRANSFORM DATA...")
 
-    print("plot data...")
+    print("PLOT DATA...")
     return
 
 

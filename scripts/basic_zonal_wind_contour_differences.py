@@ -64,6 +64,7 @@ def main():
     height: int = args.figsize_height_in_inches
     dpi: int = args.dpi
 
+    # check directories
     parent_data_dir_on_levante = "/work/bm1233/b383137/URAP-SABER-UAL120_150_F03C14L00S30-R2B7_free_30_years/data/"
     assert exists(parent_data_dir_on_levante)
 
@@ -90,6 +91,7 @@ def main():
         r2b7_dir, "R2B7_free_30_years_u-atm_3d_ML_ymonmean_2019-2029_RM.nc")
     assert exists(r2b7_zonal_wind_file)
 
+    # loading and checking data
     print("LOAD DATA...")
     urap_dataset = nc.Dataset(urap_zonal_wind_file)
     urap_variables = urap_dataset.variables
@@ -139,6 +141,7 @@ def main():
     assert len(r2b7_zonal_wind.shape) == N_ZONAL_WIND_AXES
     assert r2b7_zonal_wind.shape[TIME_AXIS] == N_MONTHS
 
+    # preparing data for difference plotting
     print("TRANSFORM DATA...")
     urap_height_in_km = convert_pressure_in_hPa_to_height_in_km(urap_level)
     r2b4_height_in_km = transform_rnbk_height(r2b4_height_in_meters)
@@ -169,8 +172,8 @@ def main():
 
     r2b7_to_r2b4 = r2b7.interp({HEIGHT: r2b4.height, LATITUDE: r2b4.lat})
 
+    # plot difference contours for desired grid resolutions
     print(f"PLOT DATA TO {plots_dir}...")
-    # fig: Figure, ax: Axes = plt.subplots()
     plot_difference_contours(
         reference=urap, other=r2b4_to_urap, plots_dir=plots_dir,
         savefig_path_annotation="r2b4_minus_urap",

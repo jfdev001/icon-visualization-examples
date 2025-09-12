@@ -19,8 +19,13 @@ resolution (i.e., R2B4 to R2B7) more accurately reflects ground truth
 winds (i.e., URAP data).
 """
 
+TIME: str = "time"
 LATITUDE: str = "lat"
 LONGITUDE: str = "lon"
+HEIGHT: str = "height"
+HEIGHT_UNITS: str = "km"
+ZONAL_WIND_UNITS: str = "m s-1"
+UNITS: str = "units"
 
 N_RNBK_FULL_LEVEL_CENTER_HEIGHT_AXES: int = 3
 RNBK_ZONAL_WIND: str = "u"
@@ -91,6 +96,7 @@ def main():
     urap_zonal_wind: ndarray = urap_variables[URAP_ZONAL_WIND][:]
     urap_level: ndarray = urap_level_variable[:]
     urap_lat: ndarray = urap_variables[LATITUDE][:]
+    urap_lon: ndarray = urap_variables[LONGITUDE][:]
 
     r2b4_levels_dataset = nc.Dataset(r2b4_levels_file)
     r2b4_levels_variables = r2b4_levels_dataset.variables
@@ -103,6 +109,7 @@ def main():
     r2b4_zonal_wind: ndarray = r2b4_zonal_wind_variables[RNBK_ZONAL_WIND][:]
 
     r2b4_lat: ndarray = r2b4_zonal_wind_variables[LATITUDE][:]
+    r2b4_lon: ndarray = r2b4_zonal_wind_variables[LONGITUDE][:]
 
     r2b7_levels_dataset = nc.Dataset(r2b7_levels_file)
     r2b7_levels_variables = r2b7_levels_dataset.variables
@@ -114,7 +121,8 @@ def main():
     r2b7_zonal_wind_variables = r2b7_zonal_wind_dataset.variables
     r2b7_zonal_wind: ndarray = r2b7_zonal_wind_variables[RNBK_ZONAL_WIND][:]
 
-    r2b7_lat: ndarray = r2b4_zonal_wind_variables[LATITUDE][:]
+    r2b7_lat: ndarray = r2b7_zonal_wind_variables[LATITUDE][:]
+    r2b7_lon: ndarray = r2b7_zonal_wind_variables[LONGITUDE][:]
 
     assert len(urap_level.shape) == N_URAP_LEVEL_AXES
     assert len(urap_zonal_wind.shape) == N_ZONAL_WIND_AXES
@@ -145,6 +153,12 @@ def main():
     # TODO: since you need to compute differences where latitudes and heights
     # overlap, you need to do something like xarray align
     # https://tutorial.xarray.dev/fundamentals/02.3_aligning_data_objects.html#alignment-putting-data-on-the-same-grid
+    urap = make_xarray_dataset(
+        urap_zonal_wind, urap_height_in_km, urap_lat, urap_lon)
+    r2b4 = make_xarray_dataset(
+        r2b4_zonal_wind, r2b4_height_in_km, r2b4_lat, r2b4_lon)
+    r2b7 = make_xarray_dataset(
+        r2b7_zonal_wind, r2b7_height_in_km, r2b7_lat, r2b7_lon)
 
     print("PLOT DATA...")
     # fig: Figure, ax: Axes = plt.subplots()
@@ -178,6 +192,22 @@ def transform_rnbk_height(rnbk_height):
 def mean_on_longitude(zonal_wind):
     assert len(zonal_wind.shape) == N_ZONAL_WIND_AXES
     return mean(zonal_wind, axis=ZONAL_WIND_LONGITUDE_AXIS)
+
+
+def make_xarray_dataset(zonal_wind, height_in_km, lat, lon):
+    dataset = xarr.DataArray(
+        zonal_wind,
+        dims=[TIME, HEIGHT, LATITUDE, LONGITUDE],
+        coords={
+            TIME: range(N_MONTHS),
+            HEIGHT: (HEIGHT, height_in_km, {UNITS: HEIGHT_UNITS}),
+            LATITUDE: lat,
+            LONGITUDE: lon
+        },
+        name=RNBK_ZONAL_WIND,
+        attrs={UNITS: ZONAL_WIND_UNITS}
+    )
+    return dataset
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ To demonstrate the pipeline, install the requirements in a virtual environment
 ```shell
 python3 -m venv .venv
 source .venv/bin/activate  
-pip install -r requirements.txt 
+pip install -e . # package is still under development 
 ```
 
 Then, inspect and/or run the files in `scripts/`

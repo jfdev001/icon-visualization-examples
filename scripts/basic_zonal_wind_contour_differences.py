@@ -8,6 +8,8 @@ from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 import netCDF4 as nc
 
+from src.conversion import convert_pressure_in_hPa_to_height_in_km
+
 DESCRIPTION: str = """
 Plot contour differences for zonal winds to illustrate how increasing grid
 resolution (i.e., R2B4 to R2B7) more accurately reflects ground truth

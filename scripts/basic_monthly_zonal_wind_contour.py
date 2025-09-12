@@ -160,6 +160,8 @@ for month in range(n_months):
 
     # Label elements of plot
     ax.clabel(contour, **clabel_kwargs)
+    ax.set_xlim(**ax_set_xlim_kwargs)
+    ax.set_ylim(**ax_set_ylim_kwargs)
     ax.set_xlabel("Latitude")
     ax.set_ylabel("Height (km)")
     ax.set_title(

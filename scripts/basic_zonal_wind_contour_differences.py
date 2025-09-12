@@ -3,13 +3,16 @@ from os import mkdir
 from os.path import join, exists, dirname
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 from matplotlib.axes import Axes
+from matplotlib.colors import TwoSlopeNorm
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FixedFormatter
 import netCDF4 as nc
-from numpy import ndarray, mean
+from numpy import ndarray, mean, linspace, hstack
 import xarray as xarr
 
+from src.consts import MONTHS, N_MONTHS
 from src.conversion import (
     convert_pressure_in_hPa_to_height_in_km, convert_meters_to_kilometers)
 
@@ -45,7 +48,6 @@ ZONAL_WIND_HEIGHT_OR_LEVEL_AXIS: int = 1
 ZONAL_WIND_LATITUDE_AXIS: int = 2
 ZONAL_WIND_LONGITUDE_AXIS: int = 3
 
-N_MONTHS: int = 12
 JANUARY_IX: int = 0
 JULY_IX: int = 6
 
@@ -54,12 +56,13 @@ def main():
     # parse cli
     args = cli()
 
-    # define paths
-    dir_of_current_script = Path(dirname(__file__))
-    project_dir = dir_of_current_script.parent
-    plots_dir = join(project_dir, "plots")
+    plots_dir: str = args.plots_dir
     if not exists(plots_dir):
         mkdir(plots_dir)
+
+    width: int = args.figsize_width_in_inches
+    height: int = args.figsize_height_in_inches
+    dpi: int = args.dpi
 
     parent_data_dir_on_levante = "/work/bm1233/b383137/URAP-SABER-UAL120_150_F03C14L00S30-R2B7_free_30_years/data/"
     assert exists(parent_data_dir_on_levante)
@@ -141,31 +144,45 @@ def main():
     r2b4_height_in_km = transform_rnbk_height(r2b4_height_in_meters)
     r2b7_height_in_km = transform_rnbk_height(r2b7_height_in_meters)
 
-    # TODO: since you need to compute differences where latitudes and heights
-    # overlap, you need to do something like xarray align
-    # https://tutorial.xarray.dev/fundamentals/02.3_aligning_data_objects.html#alignment-putting-data-on-the-same-grid
-    # TODO: perform interpolation to get the higher resolution grids to the
-    # URAP
     urap = (
         make_xarray_dataset(
             urap_zonal_wind, urap_height_in_km, urap_lat, urap_lon)
-        .mean(dim=LONGITUDE)
-    )
+        .mean(dim=LONGITUDE))
+
     r2b4 = (
         make_xarray_dataset(
             r2b4_zonal_wind, r2b4_height_in_km, r2b4_lat, r2b4_lon)
         .mean(dim=LONGITUDE)
-        .interp({HEIGHT: urap.height, LATITUDE: urap.lat})
     )
+
     r2b7 = (
         make_xarray_dataset(
             r2b7_zonal_wind, r2b7_height_in_km, r2b7_lat, r2b7_lon)
         .mean(dim=LONGITUDE)
-        .interp({HEIGHT: urap.height, LATITUDE: urap.lat})
     )
 
-    print("PLOT DATA...")
+    # interpolate to target datasets -- where interpolation occurs from
+    # higher resolution to lower resolution dataset
+    r2b4_to_urap = r2b4.interp({HEIGHT: urap.height, LATITUDE: urap.lat})
+
+    r2b7_to_urap = r2b7.interp({HEIGHT: urap.height, LATITUDE: urap.lat})
+
+    r2b7_to_r2b4 = r2b7.interp({HEIGHT: r2b4.height, LATITUDE: r2b4.lat})
+
+    print(f"PLOT DATA TO {plots_dir}...")
     # fig: Figure, ax: Axes = plt.subplots()
+    plot_difference_contours(
+        reference=urap, other=r2b4_to_urap, plots_dir=plots_dir,
+        savefig_path_annotation="r2b4_minus_urap",
+        figsize=(width, height), dpi=dpi)
+    plot_difference_contours(
+        reference=urap, other=r2b7_to_urap, plots_dir=plots_dir,
+        savefig_path_annotation="r2b7_minus_urap",
+        figsize=(width, height), dpi=dpi)
+    plot_difference_contours(
+        reference=r2b4, other=r2b7_to_r2b4, plots_dir=plots_dir,
+        savefig_path_annotation="r2b7_minus_r2b4",
+        figsize=(width, height), dpi=dpi)
 
     return
 
@@ -173,6 +190,21 @@ def main():
 def cli():
     parser = ArgumentParser(description=DESCRIPTION,
                             formatter_class=RawDescriptionHelpFormatter)
+
+    dir_of_current_script = Path(dirname(__file__))
+    project_dir = dir_of_current_script.parent
+    plots_dir = join(project_dir, "plots_contour_difference")
+    parser.add_argument(
+        "--plots-dir", type=str, default=plots_dir,
+        help=f"Directory to write contour difference plots. (default: {plots_dir})")
+    parser.add_argument(
+        "--figsize-width-in-inches", type=int, default=15,
+        help="width in (width, height) for matplotlib plot. (default: 15)")
+    parser.add_argument(
+        "--figsize-height-in-inches", type=int, default=8,
+        help="height in (width, height) for matplotlib plot. (default: 8)")
+    parser.add_argument("--dpi", type=int, default=300,
+                        help="(default: 300)")
     args = parser.parse_args()
     return args
 
@@ -212,6 +244,88 @@ def make_xarray_dataset(zonal_wind, height_in_km, lat, lon):
         attrs={UNITS: ZONAL_WIND_UNITS}
     )
     return dataset
+
+
+def plot_difference_contours(
+        reference: xarr.DataArray,
+        other: xarr.DataArray,
+        plots_dir: str,
+        savefig_path_annotation: str,
+        vmin: float = -80,
+        vmax: float = 80,
+        min_contour_fill: float = -100,
+        max_contour_fill: float = 100,
+        figsize: tuple[int, int] = (15, 8),
+        dpi: int = 300):
+
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=figsize)
+
+    difference = other - reference
+    zonal_wind = difference.values
+
+    # Define contour plotting configuration
+    n_contourf_levels = 32
+    contourf_levels = linspace(
+        min_contour_fill, max_contour_fill, n_contourf_levels)
+    norm = TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
+    contourf_kwargs = dict(
+        levels=contourf_levels,
+        extend="both",
+        cmap="bwr",
+        vmin=vmin,
+        vmax=vmax,
+        norm=norm
+    )
+
+    colorbar_ticks = range(vmin, vmax+10, 20)
+    colorbar_kwargs = dict(
+        label="zonal wind difference (m s-1)",
+        ticks=colorbar_ticks)
+
+    # define contour lines even beyond the vmin and vmax
+    n_contour_lines = 20
+    contour_levels = hstack((
+        linspace(min_contour_fill, max_contour_fill, n_contour_lines),
+    ))
+    contour_kwargs = dict(
+        levels=contour_levels, linewidths=0.5, colors="k")
+
+    clabel_kwargs = dict(inline=True, fmt="%d", fontsize=10)
+
+    ax_set_ylim_kwargs = dict(bottom=0, top=150)
+    ax_set_xlim_kwargs = dict(left=-90, right=90)
+
+    print(f"Difference Plot: {savefig_path_annotation}")
+    for t in range(N_MONTHS):
+        print(f"Month: {t+1:02d}")
+
+        zonal_wind_at_t = zonal_wind[t]
+        contour_fill = ax.contourf(
+            difference.lat, difference.height, zonal_wind_at_t,
+            **contourf_kwargs)
+        colorbar = fig.colorbar(contour_fill, ax=ax, **colorbar_kwargs)
+        contour_lines = ax.contour(
+            difference.lat, difference.height, zonal_wind_at_t,
+            **contour_kwargs)
+
+        month = MONTHS[t]
+        ax.clabel(contour_lines, **clabel_kwargs)
+        ax.set_title(f"{savefig_path_annotation} {month}")
+        ax.set_xlabel("Latitude")
+        ax.set_ylabel("Height (km)")
+        ax.set_xlim(**ax_set_xlim_kwargs)
+        ax.set_ylim(**ax_set_ylim_kwargs)
+
+        fig.tight_layout()
+        fig.savefig(
+            join(plots_dir, f"{t:02d}_{month}_{savefig_path_annotation}.png"),
+            dpi=dpi)
+        colorbar.remove()
+        ax.clear()
+
+    return fig, ax
 
 
 if __name__ == "__main__":

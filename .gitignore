@@ -3,13 +3,21 @@
 **/*.swo
 **/*.vscode
 
+# plots 
+**/*.PNG 
+**/*.png
+**/*.SVG 
+**/*.svg
+**/*.JPG
+**/*.jpg
+
 # experiment directories ignored until determination of sizes
 **/Plotdir
 **/Datasets
 **/scriptdir
 **/heightfile 
 **/data/
-**/plots/
+**/plots*
 
 # gitlab builds
 builds/

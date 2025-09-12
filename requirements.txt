@@ -1,3 +1,5 @@
 cdo
 netCDF4
 matplotlib
+scipy
+xarray

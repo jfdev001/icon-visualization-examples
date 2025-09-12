@@ -7,8 +7,10 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 import netCDF4 as nc
+from numpy import ndarray, mean
 
-from src.conversion import convert_pressure_in_hPa_to_height_in_km
+from src.conversion import (
+    convert_pressure_in_hPa_to_height_in_km, convert_meters_to_kilometers)
 
 DESCRIPTION: str = """
 Plot contour differences for zonal winds to illustrate how increasing grid
@@ -19,21 +21,27 @@ winds (i.e., URAP data).
 LATITUDE: str = "lat"
 LONGITUDE: str = "lon"
 
-N_RNBK_HEIGHT_AXES: int = 3
+N_RNBK_FULL_LEVEL_CENTER_HEIGHT_AXES: int = 3
 RNBK_ZONAL_WIND: str = "u"
 RNBK_FULL_LEVEL_CENTER_HEIGHT: str = "z_mc"
+RNBK_FULL_LEVEL_CENTER_HEIGHT_UNITS: str = "m"
+RNBK_FULL_LEVEL_CENTER_HEIGHT_LATITUDE_AXIS: int = 1
+RNBK_FULL_LEVEL_CENTER_HEIGHT_LONGITUDE_AXIS: int = 2
 
 URAP_ZONAL_WIND: str = "ua"
 N_URAP_LEVEL_AXES: int = 1
 URAP_LEVEL: str = "lev"
+URAP_LEVEL_UNITS: str = "hPa"
 
 N_ZONAL_WIND_AXES: int = 4
 TIME_AXIS: int = 0
-HEIGHT_OR_LEVEL_AXIS: int = 1
-LATITUDE_AXIS: int = 2
-LONGITUDE_AXIS: int = 3
+ZONAL_WIND_HEIGHT_OR_LEVEL_AXIS: int = 1
+ZONAL_WIND_LATITUDE_AXIS: int = 2
+ZONAL_WIND_LONGITUDE_AXIS: int = 3
 
-METERS_PER_KILOMETER: int = 1000
+N_MONTHS: int = 12
+JANUARY_IX: int = 0
+JULY_IX: int = 6
 
 
 def main():
@@ -76,36 +84,61 @@ def main():
     print("LOAD DATA...")
     urap_dataset = nc.Dataset(urap_zonal_wind_file)
     urap_variables = urap_dataset.variables
-    assert len(urap_variables[URAP_LEVEL].shape) == N_URAP_LEVEL_AXES
-    assert (
-        len(urap_variables[URAP_ZONAL_WIND].shape) == N_ZONAL_WIND_AXES)
+    urap_level_variable = urap_variables[URAP_LEVEL]
+    assert urap_level_variable.units == URAP_LEVEL_UNITS
+
+    urap_zonal_wind: ndarray = urap_variables[URAP_ZONAL_WIND][:]
+    urap_level: ndarray = urap_level_variable[:]
+    urap_lat: ndarray = urap_variables[LATITUDE][:]
 
     r2b4_levels_dataset = nc.Dataset(r2b4_levels_file)
     r2b4_levels_variables = r2b4_levels_dataset.variables
-    assert (
-        len(r2b4_levels_variables[RNBK_FULL_LEVEL_CENTER_HEIGHT].shape)
-        == N_RNBK_HEIGHT_AXES)
+    r2b4_height_variable = r2b4_levels_variables[RNBK_FULL_LEVEL_CENTER_HEIGHT]
+    assert r2b4_height_variable.units == RNBK_FULL_LEVEL_CENTER_HEIGHT_UNITS
+    r2b4_height_in_meters: ndarray = r2b4_height_variable[:]
 
     r2b4_zonal_wind_dataset = nc.Dataset(r2b4_zonal_wind_file)
     r2b4_zonal_wind_variables = r2b4_zonal_wind_dataset.variables
-    assert (
-        len(r2b4_zonal_wind_variables[RNBK_ZONAL_WIND].shape)
-        == N_ZONAL_WIND_AXES)
+    r2b4_zonal_wind: ndarray = r2b4_zonal_wind_variables[RNBK_ZONAL_WIND][:]
+
+    r2b4_lat: ndarray = r2b4_zonal_wind_variables[LATITUDE][:]
 
     r2b7_levels_dataset = nc.Dataset(r2b7_levels_file)
     r2b7_levels_variables = r2b7_levels_dataset.variables
-    assert (
-        len(r2b7_levels_variables[RNBK_FULL_LEVEL_CENTER_HEIGHT].shape)
-        == N_RNBK_HEIGHT_AXES)
+    r2b7_height_variable = r2b7_levels_variables[RNBK_FULL_LEVEL_CENTER_HEIGHT]
+    assert r2b7_height_variable.units == RNBK_FULL_LEVEL_CENTER_HEIGHT_UNITS
+    r2b7_height_in_meters: ndarray = r2b7_height_variable[:]
 
     r2b7_zonal_wind_dataset = nc.Dataset(r2b7_zonal_wind_file)
     r2b7_zonal_wind_variables = r2b7_zonal_wind_dataset.variables
-    assert (
-        len(r2b7_zonal_wind_variables[RNBK_ZONAL_WIND].shape)
-        == N_ZONAL_WIND_AXES)
+    r2b7_zonal_wind: ndarray = r2b7_zonal_wind_variables[RNBK_ZONAL_WIND][:]
 
-    # TODO: pressure level to height for URAP
+    r2b7_lat: ndarray = r2b4_zonal_wind_variables[LATITUDE][:]
+
+    assert len(urap_level.shape) == N_URAP_LEVEL_AXES
+    assert len(urap_zonal_wind.shape) == N_ZONAL_WIND_AXES
+    assert urap_zonal_wind.shape[TIME_AXIS] == N_MONTHS
+
+    assert len(r2b4_height_in_meters.shape) == N_RNBK_FULL_LEVEL_CENTER_HEIGHT_AXES
+    assert len(r2b4_zonal_wind.shape) == N_ZONAL_WIND_AXES
+    assert r2b4_zonal_wind.shape[TIME_AXIS] == N_MONTHS
+
+    assert len(r2b7_height_in_meters.shape) == N_RNBK_FULL_LEVEL_CENTER_HEIGHT_AXES
+    assert len(r2b7_zonal_wind.shape) == N_ZONAL_WIND_AXES
+    assert r2b7_zonal_wind.shape[TIME_AXIS] == N_MONTHS
+
     print("TRANSFORM DATA...")
+    urap_zonal_wind_jan = transform_zonal_wind(urap_zonal_wind, JANUARY_IX)
+    urap_zonal_wind_jul = transform_zonal_wind(urap_zonal_wind, JULY_IX)
+    urap_height_in_km = convert_pressure_in_hPa_to_height_in_km(urap_level)
+
+    r2b4_zonal_wind_jan = transform_zonal_wind(r2b4_zonal_wind, JANUARY_IX)
+    r2b4_zonal_wind_jul = transform_zonal_wind(r2b4_zonal_wind, JULY_IX)
+    r2b4_height_in_km = transform_rnbk_height(r2b4_height_in_meters)
+
+    r2b7_zonal_wind_jan = transform_zonal_wind(r2b7_zonal_wind, JANUARY_IX)
+    r2b7_zonal_wind_jul = transform_zonal_wind(r2b7_zonal_wind, JULY_IX)
+    r2b7_height_in_km = transform_rnbk_height(r2b7_height_in_meters)
 
     print("PLOT DATA...")
     return
@@ -116,6 +149,27 @@ def cli():
                             formatter_class=RawDescriptionHelpFormatter)
     args = parser.parse_args()
     return args
+
+
+def transform_zonal_wind(zonal_wind, time: int):
+    return mean_on_longitude(zonal_wind)[time]
+
+
+def transform_rnbk_height(rnbk_height):
+    assert len(rnbk_height.shape) == N_RNBK_FULL_LEVEL_CENTER_HEIGHT_AXES
+    rnbk_height_mean_on_lat_lon = mean(
+        rnbk_height,
+        axis=(
+            RNBK_FULL_LEVEL_CENTER_HEIGHT_LATITUDE_AXIS,
+            RNBK_FULL_LEVEL_CENTER_HEIGHT_LONGITUDE_AXIS))
+    rnbk_height_mean_on_lat_lon_in_km = convert_meters_to_kilometers(
+        rnbk_height_mean_on_lat_lon)
+    return rnbk_height_mean_on_lat_lon_in_km
+
+
+def mean_on_longitude(zonal_wind):
+    assert len(zonal_wind.shape) == N_ZONAL_WIND_AXES
+    return mean(zonal_wind, axis=ZONAL_WIND_LONGITUDE_AXIS)
 
 
 if __name__ == "__main__":

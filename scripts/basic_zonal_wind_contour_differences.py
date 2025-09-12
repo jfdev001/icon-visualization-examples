@@ -8,6 +8,7 @@ from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 import netCDF4 as nc
 from numpy import ndarray, mean
+import xarray as xarr
 
 from src.conversion import (
     convert_pressure_in_hPa_to_height_in_km, convert_meters_to_kilometers)
@@ -140,7 +141,14 @@ def main():
     r2b7_zonal_wind_jul = transform_zonal_wind(r2b7_zonal_wind, JULY_IX)
     r2b7_height_in_km = transform_rnbk_height(r2b7_height_in_meters)
 
+    print("ALIGN DATA...")
+    # TODO: since you need to compute differences where latitudes and heights
+    # overlap, you need to do something like xarray align
+    # https://tutorial.xarray.dev/fundamentals/02.3_aligning_data_objects.html#alignment-putting-data-on-the-same-grid
+
     print("PLOT DATA...")
+    # fig: Figure, ax: Axes = plt.subplots()
+
     return
 
 
